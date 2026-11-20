@@ -1,0 +1,701 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>WMS Simulator</title>
+<style>
+  :root{--bg:#0d0d10;--panel:#16161a;--panel2:#1c1c22;--line:#2a2a30;--txt:#ececef;
+        --dim:#8a8a92;--accent:#E30613;--ok:#22c55e;--okbg:#10231a;--failbg:#2a1416;}
+  *{box-sizing:border-box}
+  body{margin:0;font:14px/1.45 ui-sans-serif,system-ui,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--txt)}
+  pre{font-family:ui-monospace,Menlo,Consolas,monospace}
+  h1{font-size:18px;margin:0}
+  .brandlogo{flex-shrink:0;height:26px;width:auto;display:block}
+  .brand-divider{width:1px;height:32px;background:#2a2a30;flex-shrink:0}
+  h1.brand-title{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;font-size:18px;font-weight:700;line-height:1.25;letter-spacing:-.01em;margin:0;white-space:nowrap;color:#ececef}
+  h2{font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:var(--dim);margin:0 0 8px}
+  button{background:var(--panel2);color:var(--txt);border:1px solid var(--line);border-radius:7px;padding:7px 12px;cursor:pointer;font-size:13px}
+  button:hover{border-color:#3a4150}
+  button.go{background:var(--ok);border-color:var(--ok);font-weight:600}
+  button.accent{background:var(--accent);border-color:var(--accent);font-weight:600}
+  button.small{padding:4px 9px;font-size:12px}
+  input,select{background:#0d0d10;color:var(--txt);border:1px solid var(--line);border-radius:6px;padding:6px 8px;font-size:13px}
+  .topbar{display:flex;align-items:center;gap:12px;padding:12px 18px;border-bottom:1px solid var(--line);background:var(--panel);flex-wrap:wrap}
+  .pill{font-size:12px;padding:3px 9px;border-radius:20px;border:1px solid var(--line);color:var(--dim)}
+  .pill.on{color:#fff;background:var(--ok);border-color:var(--ok)}
+  .pill.off{color:#fff;background:#444;border-color:#444}
+  .tabs{display:flex;gap:8px}
+  .tab{padding:9px 20px;border:1px solid var(--line);border-radius:9px;cursor:pointer;font-size:14px;font-weight:600;color:var(--dim)}
+  .tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .wrap{display:grid;grid-template-columns:1.15fr 1fr;gap:14px;padding:14px 18px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+  label{font-size:12px;color:var(--dim)}
+  .ports{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:10px}
+  .pcard{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:11px}
+  .pcard .pid{font-weight:700;font-size:15px}.pcard .ptype{color:var(--dim);font-size:12px}
+  .badge{display:inline-block;padding:2px 7px;border-radius:5px;font-size:11px;font-weight:600;margin:7px 0}
+  .b-open{background:#13314a;color:#7db6ec}.b-pick{background:#3a2a10;color:#f0b24a}
+  .b-susp{background:#3a1416;color:#f08a8a}.b-wait{background:#23262e;color:#8a8a92}
+  .b-ready{background:#10231a;color:#5fd08a}.b-confirm{background:#2a2410;color:#ecd24a}
+  .pcard .meta{font-size:11px;color:var(--dim);margin-top:5px}
+  .pbtns{display:flex;gap:6px;margin-top:9px;flex-wrap:wrap}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  th,td{text-align:left;padding:5px 6px;border-bottom:1px solid var(--line)}th{color:var(--dim)}
+  .banner{padding:8px 12px;border-radius:8px;margin-bottom:12px;font-size:13px;font-weight:600}
+  .banner.obs{background:#10231a;color:#5fd08a;border:1px solid #1f6d45}
+  .banner.drv{background:#2a1416;color:#f3a0a0;border:1px solid #7a2c2c}
+  .modecard{border:1px solid var(--line);border-radius:10px;padding:12px 14px;cursor:pointer;background:#141922;transition:.15s}
+  .modecard:hover{border-color:#3a4658}
+  .modecard.sel{border-color:#5fd08a;background:#10231a;box-shadow:0 0 0 1px #1f6d45 inset}
+  .modecard .mc-h{font-weight:700;font-size:14px;margin-bottom:5px}
+  .modecard .mc-sub{font-size:12px;color:#d4d4d8;line-height:1.5}
+  .modecard .mc-use{font-size:11px;color:var(--dim);margin-top:7px;line-height:1.45}
+  .kpi{display:flex;gap:14px;margin-top:6px}.kpi b{font-size:18px}.kpi span{font-size:11px;color:var(--dim);display:block}
+  .call{border:1px solid var(--line);border-radius:8px;margin-bottom:8px;overflow:hidden}
+  .call .hd{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;cursor:pointer;font-size:12px}
+  .call.ok .hd{background:var(--okbg)}.call.fail .hd{background:var(--failbg)}.call .stt{font-weight:700}
+  .call .body{display:none;grid-template-columns:1fr 1fr}.call.open .body{display:grid;border-top:1px solid var(--line);background:#0d0d10}
+  .call .body pre{margin:0;padding:9px;font-size:11px;white-space:pre-wrap;word-break:break-word;max-height:230px;overflow:auto}
+  .call .body pre:first-child{border-right:1px solid var(--line)}
+  .faultline{padding:5px 10px;font-size:12px;color:#f3a0a0;background:var(--failbg);border-top:1px solid var(--line)}
+  .lp{background:#07090c;border:1px solid var(--line);border-radius:8px;padding:9px;height:200px;overflow:auto;font-family:ui-monospace,monospace;font-size:11.5px;color:#9fe0a8}
+  .lp .err{color:#f08a8a}
+  .hidden{display:none}.muted{color:var(--dim);font-size:12px}
+  .grp{margin-bottom:14px}.grp>h3{font-size:13px;margin:0 0 8px;color:#d4d4d8;border-bottom:1px solid var(--line);padding-bottom:5px}
+  .mcard{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:8px}
+  .mcard .mn{font-weight:700;font-family:ui-monospace,monospace;font-size:13px}
+  .mcard .md{font-size:11.5px;color:var(--dim);margin:3px 0 7px}
+  .mcard .mp{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:7px}
+  .mcard .mp label{font-size:11px}.mcard .mp input{width:72px;padding:4px 6px}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <img src="/static/autostore-logo.svg" onerror="this.onerror=null;this.src='autostore-logo.svg'" alt="AutoStore" class="brandlogo"/>
+  <div class="brand-divider" aria-hidden="true"></div>
+  <h1 class="brand-title">WMS Simulator</h1>
+  <div class="tabs">
+    <div id="tabWMS" class="tab active" onclick="setTab('wms')">WMS</div>
+    <div id="tabTrain" class="tab" onclick="setTab('train')">Training</div>
+  </div>
+  <span id="opPill" class="pill off">stopped</span>
+  <span id="lpPill" class="pill off">LP offline</span>
+  <span id="simTime" class="pill">sim –</span>
+  <div style="flex:1"></div>
+  <button class="small" onclick="simCall('start_simulation')">Sim ▶</button>
+  <button class="small" onclick="simCall('stop_simulation')">Sim ■</button>
+  <input id="speed" value="100" style="width:58px"/>
+  <button class="small" onclick="simSpeed()">Speed</button>
+  <button class="small" onclick="testSDK()">Test SDK</button>
+</div>
+
+<div class="wrap">
+  <!-- ============ LEFT: active tab ============ -->
+  <div class="panel">
+
+    <!-- ========== WMS TAB ========== -->
+    <div id="wms">
+      <div id="modeBanner" class="banner"></div>
+
+      <!-- setup (collapsible) -->
+      <details id="setupBox" open>
+        <summary style="cursor:pointer;font-weight:600;margin-bottom:10px">Site setup</summary>
+        <input type="hidden" id="mode" value="drive"/>
+        <label style="font-weight:600;display:block;margin-bottom:6px">What do you want to do?</label>
+        <div id="modeCards" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+          <div class="modecard" data-mode="drive" onclick="pickMode('drive')">
+            <div class="mc-h">▶ Run the operation myself</div>
+            <div class="mc-sub">The tool <b>becomes the WMS</b> — it creates orders and runs open → pick → close on every port, following your demand scenario. It <b>sends real commands.</b></div>
+            <div class="mc-use">Use on a <b>test / SDK / commissioning grid</b> — no customer WMS attached. For training, demos, and practising the API flow.</div>
+          </div>
+          <div class="modecard" data-mode="observe" onclick="pickMode('observe')">
+            <div class="mc-h">👁 Watch a live system</div>
+            <div class="mc-sub">The tool only <b>listens and reads</b> — Log Publisher + read-only queries. It <b>cannot send any command</b>, so it's safe on a customer's production grid.</div>
+            <div class="mc-use">Use on a <b>customer's live grid</b> (White Glove) to diagnose: see each port's Waitbin and throughput without touching anything.</div>
+          </div>
+        </div>
+        <div class="row" id="driveGate">
+          <label style="color:#f3a0a0"><input type="checkbox" id="driveConfirm"/>
+            I confirm this is a TEST / commissioning grid (no customer WMS connected).</label>
+        </div>
+        <div class="row">
+          <label>SDK host</label><input id="host" value="127.0.0.1" style="width:100px"/>
+          <label>port</label><input id="port" value="44000" style="width:60px"/>
+          <label>LP</label><input id="lpHost" value="127.0.0.1" style="width:100px"/>
+          <label>:</label><input id="lpPort" value="44001" style="width:60px"/>
+        </div>
+        <div class="row drive-only">
+          <label>Bin pool</label><input id="binPool" value="auto" style="width:260px"/>
+          <label>Tasks/grp</label><input id="tpg" value="3" style="width:42px"/>
+          <label>Est pick s</label><input id="est" value="20" style="width:42px"/>
+          <label>Look-ahead min</label><input id="look" value="30" style="width:42px"/>
+        </div>
+        <div class="row drive-only" style="margin-top:-4px">
+          <span class="muted" style="font-size:11px">Leave <b>auto</b> to use every real bin in the loaded grid (recommended — no 5-bin repeat). Or list specific bin ids, comma-separated.</span>
+        </div>
+        <div class="row drive-only" style="background:rgba(227,6,19,.08);border-radius:8px;padding:8px">
+          <label><b>Test scenario</b></label>
+          <select id="testScen" style="width:230px"><option value="">— free run (no test) —</option></select>
+          <button class="ghost" type="button" onclick="loadScenario()">Load settings</button>
+          <div id="testScenInfo" class="muted" style="font-size:12px;flex-basis:100%"></div>
+        </div>
+        <div class="row drive-only">
+          <label>Scenario</label>
+          <select id="profile" onchange="profileChanged()" style="width:140px">
+            <option value="steady">Steady (24/7)</option>
+            <option value="peak">Peak-hours</option>
+            <option value="shift">Timed shift</option>
+            <option value="day">Full day (24 h)</option>
+          </select>
+          <label>Targets cat:bins/hr</label><input id="targets" value="1:200,2:150,3:150" style="width:150px"/>
+        </div>
+        <div class="row" id="peakRow" style="display:none">
+          <label>Peak ×</label><input id="peakFactor" value="2" style="width:42px"/>
+          <label>from min</label><input id="peakFrom" value="0" style="width:48px"/>
+          <label>to min</label><input id="peakTo" value="120" style="width:48px"/>
+        </div>
+        <div class="row" id="shiftRow" style="display:none">
+          <label>Duration min</label><input id="dur" value="480" style="width:56px"/>
+          <label>Ramp min</label><input id="ramp" value="30" style="width:48px"/>
+        </div>
+        <div class="row" id="dayRow" style="display:none" title="Demand follows a 24 h curve (night ×0.2, morning ×1.5, lunch ×0.6, afternoon peak ×2). Ports are staffed per hour; operators take staggered breaks and hand over at shift change. 24 h = 2.4 h wall at 10×, 72 min at 20×.">
+          <label>Start hour</label><input id="dayStart" value="6" style="width:36px"/>
+          <label>Break every min</label><input id="brkEvery" value="120" style="width:44px"/>
+          <label>Break min</label><input id="brkMin" value="15" style="width:36px"/>
+          <label>Shift h</label><input id="shiftH" value="8" style="width:32px"/>
+          <label>Handover min</label><input id="handMin" value="5" style="width:32px"/>
+        </div>
+        <div class="drive-only">
+        <div class="row" style="margin-top:8px;padding:8px;border:1px solid #1f6d45;border-radius:8px;background:#0f1f17">
+          <button class="go small" onclick="discoverGrid()">⟳ Load ports &amp; bins from the grid</button>
+          <span class="muted" id="discoverNote">Reads the real ports and bin count from the Log Publisher — matches whatever grid you loaded in the SDK.</span>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <label>Sim speed ×</label><input id="simSpeedCfg" value="100" style="width:60px"/>
+          <span class="muted" style="font-size:11px">100 = real time · 1000 = 10× · 3000 = 30× — a 30-min shift runs in ~1 min.</span>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <label>Pick time (s)</label><input id="pickTime" value="20" style="width:48px" title="operator time per bin before closebin (confirm = auto)"/>
+          <label>Bin arrival buffer (s)</label><input id="arrivalBuf" value="300" style="width:48px" title="how long the WMS waits for a bin before it raises an alarm"/>
+          <label>Operator away (s)</label><input id="awayS" value="150" style="width:48px" title="used by inject A01: no closebin for this long"/>
+          <label>Auto port close after (s)</label><input id="autoClose" value="0" style="width:48px" title="0 = off; WMS suspends the port when no closebin comes for this long"/>
+          <span class="muted" style="font-size:11px">grid seconds · the WMS makes no call on a port while its bin is open · Operator away = inject A01 · Auto port close 0 = off (try 120)</span>
+        </div>
+        <div class="row" style="margin-top:6px">
+          <label><input type="checkbox" id="staffDemand" checked/> Staff ports to demand</label>
+          <span class="muted" style="font-size:11px">opens only the ports each category's target needs (~3600 / (pick time + 5 s) bins/h per port); the rest stay on standby. Untick to open every port — with a small target they starve and the monitor's score falls.</span>
+        </div>
+        <div style="margin-top:8px;padding:8px;border:1px solid #6e3b36;border-radius:8px;background:#1f1414">
+          <div class="row"><b style="font-size:13px">Inject defects</b>
+            <span class="muted" style="font-size:11px">plants known integration mistakes on purpose so the WMS Monitor can be checked (its Runs tab → Check against simulator injections). Leave all off for a clean reference run.</span></div>
+          <div id="injectBox" class="row" style="margin-top:6px;gap:12px"></div>
+          <div class="row" style="margin-top:6px"><label>every Nth bin per port</label><input id="injectEvery" value="5" style="width:42px"/>
+            <label>Site name (for the monitor)</label><input id="siteName" value="" placeholder="SDK run" style="width:160px"/></div>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <label>Example grid</label>
+          <select id="gridPreset" onchange="applyPreset()" style="width:200px">
+            <option value="">— or load an example grid —</option>
+          </select>
+          <span class="muted" id="presetNote"></span>
+        </div>
+        <h2 style="margin-top:8px">Ports</h2>
+        <table><thead><tr><th>ID</th><th>Type</th><th>Role</th><th>Cat</th><th>Confirm</th><th></th></tr></thead>
+          <tbody id="portRows"></tbody></table>
+        <div class="row" style="margin-top:8px"><button class="small" onclick="addPortRow()">+ Add port</button></div>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <button class="go" onclick="configureSite()">Configure ▸</button>
+          <span id="setupMsg" class="muted"></span>
+        </div>
+      </details>
+
+      <div class="row" style="justify-content:space-between;margin-top:6px">
+        <h2 id="liveTitle">Live operation</h2>
+        <div id="opControls"><button class="go small" onclick="opStart()">Start ▶</button>
+             <button class="small" onclick="opStop()">Stop ■</button></div>
+      </div>
+      <div class="muted" id="statLine"></div>
+      <div class="muted" id="runInfo" style="font-size:11px;margin-top:2px"></div>
+      <div id="phaseBar" style="display:none;margin-top:8px">
+        <div class="row" style="justify-content:space-between;font-size:13px">
+          <span id="phaseLabel"></span><span id="phaseCount" class="muted"></span></div>
+        <div style="height:8px;border-radius:6px;background:#1b2330;overflow:hidden;margin-top:4px">
+          <div id="phaseFill" style="height:100%;width:0%;background:#5fd08a;transition:width .3s"></div></div>
+      </div>
+      <div id="ports" class="ports" style="margin-top:10px"></div>
+      <div id="monitor" class="ports" style="margin-top:10px"></div>
+
+      <h2 style="margin-top:14px">Log Publisher (44001)</h2>
+      <div id="lp" class="lp"></div>
+    </div>
+
+    <!-- ========== TRAINING TAB ========== -->
+    <div id="train" class="hidden">
+      <h2>Training — fire any interface call and see the request &amp; response</h2>
+      <p class="muted">Pick a call, adjust its parameters, press Send. Response shows on the right.
+        Sends real calls — needs the SDK running (and Drive mode for anything that changes the grid).</p>
+      <div class="row">
+        <label>Defaults →</label>
+        <label>port</label><input id="dPort" value="1" style="width:48px"/>
+        <label>bin</label><input id="dBin" value="10002" style="width:72px"/>
+        <label>task</label><input id="dTask" value="" style="width:72px"/>
+        <label>cat</label><input id="dCat" value="1" style="width:40px"/>
+        <button class="small" onclick="applyDefaults()">apply to forms</button>
+      </div>
+      <div class="grp"><h3>Batch task groups</h3>
+        <div class="mcard"><div class="mn">create_taskgroup × N</div>
+          <div class="md">Create several task groups in one go — one create_taskgroup call per group, sent in order.
+            Ids count up from the first value. Categories = one per group (e.g. 1,1,2,3,4); a short list repeats its last value.
+            Bins are used in turn from the list. Preview shows the XML without sending.</div>
+          <div class="mp" id="bt_p">
+            <label>groups</label><input id="bt_count" value="5"/>
+            <label>tasks/group</label><input id="bt_tasks" value="3"/>
+            <label>categories</label><input id="bt_cats" value="1,1,2,3,4" style="width:110px"/>
+            <label>first taskgroup_id</label><input id="bt_tg" value="123004"/>
+            <label>first task_id</label><input id="bt_task" value="420192"/>
+            <label>first shipment</label><input id="bt_ship" value="20961"/>
+            <label>priority</label><input id="bt_prio" value="20"/>
+            <label>suspended</label><input id="bt_susp" value="0"/>
+            <label>estpicktime</label><input id="bt_est" value="20"/>
+            <label>bins</label><input id="bt_bins" value="10304,335701,22655" style="width:260px"/>
+          </div>
+          <button class="small" onclick="batchPreview()">Preview XML</button>
+          <button class="small accent" onclick="batchSend()">Send all</button>
+          <span id="bt_status" class="muted"></span>
+          <pre id="bt_xml" class="hidden" style="font-size:11px;max-height:300px;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:8px;margin:8px 0 0"></pre>
+        </div>
+      </div>
+      <div id="catalog"></div>
+    </div>
+  </div>
+
+  <!-- ============ RIGHT: call panel ============ -->
+  <div class="panel">
+    <h2>API calls — request &amp; response</h2>
+    <div id="calls"></div>
+  </div>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+const v=id=>$("#"+id).value.trim();
+const post=(u,b)=>fetch(u,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b||{})}).then(r=>r.json());
+const esc=s=>(s||"").replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const PORT_TYPES=["PickUpPort","CarouselPort","VersaPort","FusionPort","MultiPort","ConveyorPort","Custom","AutoCase","Generic"];
+
+// ---------- tabs ----------
+function setTab(t){
+  $("#tabWMS").classList.toggle("active",t==='wms');
+  $("#tabTrain").classList.toggle("active",t==='train');
+  $("#wms").classList.toggle("hidden",t!=='wms');
+  $("#train").classList.toggle("hidden",t!=='train');
+}
+
+// ---------- WMS setup ----------
+function addPortRow(pid,type,role,cat,conf){
+  const tb=$("#portRows"),tr=document.createElement("tr");
+  const idv=pid||(tb.children.length+1);
+  tr.innerHTML=`<td><input value="${idv}" style="width:48px" class="pin"/></td>
+    <td><select class="ptype">${PORT_TYPES.map(t=>`<option ${t===type?'selected':''}>${t}</option>`).join('')}</select></td>
+    <td><select class="prole"><option ${role==='picking'?'selected':''}>picking</option><option ${role==='putaway'?'selected':''}>putaway</option></select></td>
+    <td><input value="${cat||1}" style="width:40px" class="pcat"/></td>
+    <td><select class="pconf"><option ${conf!=='manual'?'selected':''}>auto</option><option ${conf==='manual'?'selected':''}>manual</option></select></td>
+    <td><button class="small" onclick="this.closest('tr').remove()">✕</button></td>`;
+  tb.appendChild(tr);
+}
+function collectPorts(){return [...$("#portRows").children].map(tr=>({
+  port_id:tr.querySelector(".pin").value.trim(),type:tr.querySelector(".ptype").value,
+  role:tr.querySelector(".prole").value,category:tr.querySelector(".pcat").value.trim()||"1",
+  confirm:tr.querySelector(".pconf").value})).filter(p=>p.port_id);}
+// Example grids. The "general" grid is AutoStore's documented 2000 bins/hr
+// look-ahead model: 10 ports in 3 categories (cat1 P1-4 @250, cat2 P5-6 @200,
+// cat3 P7-10 @150). 30-min look-ahead => ~1000 tasks in system.
+const GRIDS={
+  general:{label:"General — 2000 b/hr, 10 ports (steady)",
+    note:"AutoStore 30-min look-ahead model · cat1 1000 + cat2 400 + cat3 600 b/hr",
+    targets:"1:1000,2:400,3:600",look:30,tpg:5,
+    scenario:{profile:"steady"},
+    ports:[[1,"ConveyorPort",1],[2,"ConveyorPort",1],[3,"ConveyorPort",1],[4,"ConveyorPort",1],
+           [5,"ConveyorPort",2],[6,"ConveyorPort",2],
+           [7,"ConveyorPort",3],[8,"ConveyorPort",3],[9,"ConveyorPort",3],[10,"ConveyorPort",3]]},
+  generalPeak:{label:"General — peak hours (×1.5 for 2 h)",
+    note:"Same 10-port grid; demand rises ×1.5 during the peak window (0–120 min)",
+    targets:"1:1000,2:400,3:600",look:30,tpg:5,
+    scenario:{profile:"peak",from:0,to:120,factor:1.5},
+    ports:[[1,"ConveyorPort",1],[2,"ConveyorPort",1],[3,"ConveyorPort",1],[4,"ConveyorPort",1],
+           [5,"ConveyorPort",2],[6,"ConveyorPort",2],
+           [7,"ConveyorPort",3],[8,"ConveyorPort",3],[9,"ConveyorPort",3],[10,"ConveyorPort",3]]},
+  small:{label:"Small — 2 ports (quick test)",
+    note:"Minimal grid for a fast demo / API walkthrough",
+    targets:"1:200,2:150",look:15,tpg:3,
+    scenario:{profile:"steady"},
+    ports:[[1,"ConveyorPort",1],[2,"CarouselPort",2]]},
+};
+async function discoverGrid(){
+  $("#discoverNote").textContent="connecting to the Log Publisher…";
+  try{
+    const r=await fetch("/api/discover",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({lp_host:v('lpHost'),lp_port:+v('lpPort')})}).then(x=>x.json());
+    if(!r.connected && !(r.ports||[]).length){
+      $("#discoverNote").textContent="Couldn't reach the Log Publisher ("+(r.error||"no data")+"). Is the SDK sim running on "+v('lpHost')+":"+v('lpPort')+"?";
+      return;
+    }
+    $("#portRows").innerHTML="";
+    (r.ports||[]).forEach(p=>addPortRow(p.port_id,p.type,"picking",1,"auto"));
+    $("#gridPreset").value="";
+    $("#binPool").value="auto";
+    $("#discoverNote").textContent=`found ${(r.ports||[]).length} port(s) and ${r.bin_count} bin(s) in the grid. Set each port's category below, then Configure.`;
+  }catch(e){ $("#discoverNote").textContent="discover failed: "+e; }
+}
+function fillPresetMenu(){
+  const sel=$("#gridPreset");
+  Object.entries(GRIDS).forEach(([k,g])=>{
+    const o=document.createElement("option");o.value=k;o.textContent=g.label;sel.appendChild(o);});
+}
+function applyPreset(){
+  const k=$("#gridPreset").value, g=GRIDS[k];
+  if(!g){$("#presetNote").textContent="";return;}
+  $("#portRows").innerHTML="";
+  g.ports.forEach(([id,type,cat])=>addPortRow(id,type,"picking",cat,"auto"));
+  $("#targets").value=g.targets; $("#look").value=g.look; $("#tpg").value=g.tpg;
+  const sc=g.scenario;
+  $("#profile").value=sc.profile; profileChanged();
+  if(sc.profile==="peak"){$("#peakFrom").value=sc.from;$("#peakTo").value=sc.to;$("#peakFactor").value=sc.factor;}
+  $("#presetNote").textContent=g.note;
+}
+function pickMode(m){
+  $("#mode").value=m;
+  document.querySelectorAll('.modecard').forEach(c=>c.classList.toggle('sel',c.dataset.mode===m));
+  $("#driveGate").style.display=(m==="drive")?"flex":"none";
+  // observe needs no bins/scenario/ports — hide that clutter to keep it simple
+  const driveOnly=document.querySelectorAll('.drive-only');
+  driveOnly.forEach(el=>el.style.display=(m==="drive")?"":"none");
+}
+function profileChanged(){const p=$("#profile").value;
+  $("#peakRow").style.display=p==="peak"?"flex":"none";$("#shiftRow").style.display=p==="shift"?"flex":"none";
+  $("#dayRow").style.display=p==="day"?"flex":"none";}
+function buildScenario(){const p=$("#profile").value;
+  if(p==="peak")return{profile:"peak",base_factor:1.0,peak_windows:[{start_min:+v('peakFrom'),end_min:+v('peakTo'),factor:+v('peakFactor')}]};
+  if(p==="shift")return{profile:"shift",duration_min:+v('dur'),ramp_min:+v('ramp')};
+  if(p==="day")return{profile:"day",start_hour:+v('dayStart'),rota:{break_every_min:+v('brkEvery'),
+    break_min:+v('brkMin'),shift_hours:+v('shiftH'),handover_min:+v('handMin')}};
+  return{profile:"steady"};}
+function buildTargets(){const t={};v('targets').split(",").forEach(pr=>{const[c,r]=pr.split(":");if(c&&r)t[c.trim()]=+r.trim();});return t;}
+async function configureSite(){
+  const mode=$("#mode").value;
+  if(mode==="drive"&&!$("#driveConfirm").checked){$("#setupMsg").textContent="Tick the test-grid confirmation for Drive mode.";return;}
+  const cfg={mode,host:v('host'),port:v('port'),lp_host:v('lpHost'),lp_port:v('lpPort'),
+    bin_pool:v('binPool').split(",").map(s=>s.trim()).filter(Boolean),
+    tasks_per_group:+v('tpg'),estpicktime:+v('est'),lookahead_min:+v('look'),
+    sim_speed:+v('simSpeedCfg'),
+    pick_time_s:+v('pickTime')||null, bin_arrival_timeout_s:+v('arrivalBuf')||null,
+    operator_away_s:+v('awayS')||null, auto_port_close_s:+v('autoClose')||0,
+    staff_to_demand:$("#staffDemand").checked,
+    inject:[...document.querySelectorAll('#injectBox input:checked')].map(i=>i.value),
+    inject_every:+v('injectEvery')||5, site_name:v('siteName'), test_scenario:v('testScen')||null,
+    scenario:buildScenario(),targets:buildTargets(),ports:collectPorts()};
+  if(mode==="drive"&&!cfg.ports.length){$("#setupMsg").textContent="Add at least one port.";return;}
+  await post("/api/setup",cfg); $("#setupBox").open=false; $("#setupMsg").textContent="configured.";
+}
+const opStart=()=>post("/api/op/start");const opStop=()=>post("/api/op/stop");
+const suspend=p=>post("/api/op/suspend",{port_id:p});const resume=p=>post("/api/op/resume",{port_id:p});
+const confirmPick=p=>post("/api/op/confirm",{port_id:p});
+function adhoc(p){const b=prompt("Ad-hoc bin id for port "+p+":");if(b)post("/api/op/adhoc",{port_id:p,bin_id:b});}
+const simCall=m=>post("/api/sim/"+(m==='start_simulation'?'start':'stop'));
+const simSpeed=()=>post("/api/sim/speed",{speed:+v('speed')});
+async function testSDK(){const r=await fetch("/api/test").then(r=>r.json());
+  alert(r.ok?("SDK reachable. version "+(r.params.version||"?")):("SDK not reachable: "+(r.error||("fault "+r.fault_code))));}
+
+// ---------- WMS render ----------
+function badge(s){if((s||'').startsWith('awaiting'))return `<span class="badge b-confirm">${s}</span>`;
+  const m={open:"b-open",opening:"b-wait","bin requested":"b-pick","waiting for bin":"b-pick",picking:"b-pick",putaway:"b-pick",suspended:"b-susp",waiting:"b-wait",ready:"b-ready"};
+  return `<span class="badge ${m[s]||'b-wait'}">${s}</span>`;}
+function renderMode(st){const obs=st.mode==="observe";const b=$("#modeBanner");
+  b.className="banner "+(obs?"obs":"drv");
+  b.textContent=obs?"👁 Watching a live system — read-only. Listens & queries only; cannot send any command."
+    :"▶ Running the operation — this grid receives real commands (test grid only).";
+  $("#opControls").style.display=obs?"none":"flex";
+  $("#ports").style.display=obs?"none":"grid";$("#monitor").style.display=obs?"grid":"none";
+  $("#liveTitle").textContent=obs?"Live monitor (read-only)":"Live operation";}
+function renderMonitor(st){$("#statLine").textContent=st.status_line;
+  const list=st.monitor||[];
+  $("#monitor").innerHTML=list.length?list.map(m=>`<div class="pcard">
+    <div><span class="pid">Port ${m.port_id}</span><span class="ptype">· ${m.mode}${m.error?' · ⚠':''}</span></div>
+    <div class="meta">bin ${m.selected_bin} · ${m.ready?'ready':'not ready'}</div>
+    <div class="kpi"><div><b style="color:${m.waitbin>30?'#f0b24a':'#5fd08a'}">${m.waitbin}s</b><span>Waitbin</span></div>
+    <div><b>${m.throughput_hr}</b><span>bins/hr</span></div></div></div>`).join("")
+    :'<p class="muted">Waiting for the Log Publisher to discover ports…</p>';}
+function renderPorts(st){
+  const bycat=Object.entries(st.active_by_cat||{}).map(([c,n])=>`cat ${c}:${n}`).join(" · ")||"–";
+  const sc=(st.scenario&&st.scenario.profile)||"steady";
+  const binsTxt=st.bin_pool_size?` · ${st.bin_pool_size} grid bins`:"";
+  $("#statLine").textContent=`${st.status_line} · scenario ${sc} (×${st.demand_factor}) · active ${bycat} · total ${st.groups_total}${binsTxt}`;
+  // phase bar: PREPARING shows the look-ahead buffer filling; RUNNING shows
+  // the maintained buffer. Hidden when idle/stopped.
+  const pb=$("#phaseBar");
+  if(st.phase==="preparing"||st.phase==="running"){
+    pb.style.display="block";
+    const prep=st.phase==="preparing";
+    $("#phaseLabel").innerHTML=prep
+      ? `<b style="color:#f0b24a">① PREPARING BUFFER</b> — ports closed, queuing ${st.lookahead_min} min of work`
+      : `<b style="color:#5fd08a">② RUNNING</b> — ports open, picking · buffer maintained`;
+    $("#phaseCount").textContent=prep
+      ? `${st.prep_done}/${st.prep_total} task groups (~${st.prep_bins} bins)`
+      : `${st.groups_active} groups active · ${st.groups_total} created so far`;
+    $("#phaseFill").style.width=(prep?st.prep_pct:100)+"%";
+    $("#phaseFill").style.background=prep?"#f0b24a":"#5fd08a";
+  } else { pb.style.display="none"; }
+  $("#ports").innerHTML=st.ports.map(p=>{const aw=(p.state||'').startsWith('awaiting');
+    return `<div class="pcard"><div><span class="pid">Port ${p.port_id}</span>
+      <span class="ptype">· ${p.type} · ${p.role} · cat ${p.category} · ${p.confirm}</span></div>
+      <div>${badge(p.state)}</div>
+      <div class="meta">bin ${p.open_bin||'–'} · task ${p.open_task||'–'}</div>
+      <div class="meta">done <b>${p.picked}</b> · ${p.last||''}</div>
+      <div class="pbtns">${aw?`<button class="small go" onclick="confirmPick('${p.port_id}')">Confirm ▸ close</button>`:''}
+      ${p.state==='suspended'?`<button class="small go" onclick="resume('${p.port_id}')">Resume</button>`:`<button class="small" onclick="suspend('${p.port_id}')">Suspend</button>`}
+      <button class="small" onclick="adhoc('${p.port_id}')">Ad-hoc</button></div></div>`;}).join("");}
+function renderLP(s){$("#lpPill").className="pill "+(s.connected?"on":"off");
+  $("#lpPill").textContent=s.connected?"LP live":"LP offline";
+  $("#simTime").textContent="sim "+(s.time_factor?("×"+(s.time_factor/100)):"–");
+  const el=$("#lp");el.innerHTML=(s.lines||[]).map(l=>`<div class="${/(^|\s)(LF|PE|RE|AL|CL|LCL)\b/.test(l)?'err':''}">${esc(l)}</div>`).join("");
+  el.scrollTop=el.scrollHeight;}
+
+// ---------- call panel ----------
+const openCalls=new Set();
+function toggleCall(k){openCalls.has(k)?openCalls.delete(k):openCalls.add(k);poll();}
+function renderCalls(list){$("#calls").innerHTML=list.map(c=>{const key=c.time+"|"+c.label;
+  const clean=c.ok&&!c.fault_code&&!c.error;
+  const stt=c.error?"ERR":(c.fault_code?("FAULT "+c.fault_code):(c.status||""));
+  const sub=c.fault_text?c.fault_text:(c.error||"");
+  return `<div class="call ${clean?'ok':'fail'} ${openCalls.has(key)?'open':''}">
+    <div class="hd" onclick="toggleCall('${key.replace(/'/g,'')}')"><span>${c.time} · <b>${c.label}</b></span>
+      <span class="stt">${clean?'200 OK':stt}</span></div>
+    ${!clean&&sub?`<div class="faultline">${esc(sub)}</div>`:''}
+    <div class="body"><pre>${esc(c.request_xml||'')}</pre><pre>${esc(c.response_xml||'')}</pre></div></div>`;
+  }).join("")||'<p class="muted">No calls yet.</p>';}
+
+// ---------- poll ----------
+async function poll(){try{
+  const [st,cl,lp]=await Promise.all([fetch("/api/state").then(r=>r.json()),fetch("/api/calllog").then(r=>r.json()),fetch("/api/lp").then(r=>r.json())]);
+  renderMode(st);
+  $("#opPill").className="pill "+(st.mode==="observe"?"off":(st.running?"on":"off"));
+  $("#opPill").textContent=st.mode==="observe"?"observe":(st.phase==="preparing"?"preparing":(st.running?"running":"stopped"));
+  if(st.mode==="observe")renderMonitor(st);else renderPorts(st);
+  const inj=Object.entries(st.injected||{}).map(([k,n])=>k+"×"+n).join(" · ");
+  $("#runInfo").textContent=(st.request_log?"request log: "+st.request_log:"")+
+    ((st.inject||[]).length?"  ·  planted: "+(inj||"none yet")+" (of "+st.inject.join(", ")+")":"")+
+    (st.auto_port_closes?"  ·  auto port closes: "+st.auto_port_closes:"")+
+    (st.grid_time_factor&&st.grid_time_factor!==1?"  ·  log time = grid time ("+st.grid_time_factor+"×)":"");
+  renderCalls(cl);renderLP(lp);
+}catch(e){}}
+setInterval(poll,1200);
+// ---- test pack: one click loads a scenario's settings and says what the monitor should find
+let SCEN=[];
+fetch("/api/scenarios").then(r=>r.json()).then(d=>{SCEN=d;
+  $("#testScen").innerHTML='<option value="">— free run (no test) —</option>'+d.map(s=>`<option value="${s.id}">${s.name}</option>`).join("");
+  $("#testScen").onchange=showScenario;}).catch(()=>{});
+function showScenario(){const s=SCEN.find(x=>x.id===$("#testScen").value);
+  $("#testScenInfo").innerHTML=s?`<b>${s.what}</b><br>Monitor should find: ${s.finds}<br>Run at least ${s.minutes} min wall time, then on the monitor press <b>Check test scenario</b>.`+(s.manual?`<br><b>During the run:</b> ${s.manual}`:""):"";}
+function loadScenario(){const s=SCEN.find(x=>x.id===$("#testScen").value); if(!s){$("#testScenInfo").textContent="Pick a test scenario first.";return;}
+  const u=s.setup, set=(id,val)=>{if(val!==undefined&&$("#"+id))$("#"+id).value=val;};
+  set("targets",u.targets); set("simSpeedCfg",u.sim_speed); set("pickTime",u.pick); set("arrivalBuf",u.arrival??300);
+  set("awayS",u.away??150); set("autoClose",u.autoclose??0);
+  $("#staffDemand").checked=u.staff!==false;
+  document.querySelectorAll('#injectBox input').forEach(i=>i.checked=(u.inject||[]).includes(i.value));
+  $("#profile").value=u.profile||"steady"; profileChanged();
+  if(u.peak){set("peakFactor",u.peak.factor);set("peakFrom",u.peak.from);set("peakTo",u.peak.to);}
+  if(!v('siteName')) set("siteName","test: "+s.name);
+  showScenario(); $("#testScenInfo").insertAdjacentHTML("afterbegin","<span style='color:#2bb673'>Settings loaded — tick the test-grid box and press Configure ▸.</span><br>");}
+// plain names first — the codes are the monitor's rule ids, which few people know
+const INJ_NAME={G01:"Port closed after every bin",G02:"Ports open before work is ready",G04:"Bins opened outside task groups",
+  G05:"Bin sent straight back (ping-pong)",G06:"Port category switched mid-shift",G07:"Polling for bin arrival",
+  A01:"Operator away (bin left open)",C02:"Same bin in two orders",E01:"Bin closed before it arrived",
+  GL_PREP:"Too many bins prepared (over 25%)",GL_LOOKAHEAD:"Too little work queued",GL_HANDOFF:"Slow hand-off between bins"};
+fetch("/api/injections").then(r=>r.json()).then(d=>{
+  $("#injectBox").innerHTML=Object.entries(d).map(([k,t])=>`<label title="${t}" style="display:flex;gap:6px;align-items:flex-start;flex:1 1 45%">`+
+    `<input type="checkbox" value="${k}"/> <span><b>${INJ_NAME[k]||k}</b> <span class="muted" style="font-size:11px">${k}</span>`+
+    `<br><span class="muted" style="font-size:11px">${t}</span></span></label>`).join("");
+}).catch(()=>{});
+
+// ================= TRAINING CATALOG =================
+// each: [method, "description", [ [param, default/placeholder] ... ] ]
+const CATALOG=[
+ ["Port session",[
+   ["openport","Open a port for a category; AutoStore starts preparing bins.",[["port_id","1"],["category","1"]]],
+   ["openbin","Request the next bin at the port (returns bin_id + task_id).",[["port_id","1"]]],
+   ["closebin","Close/complete the bin after the pick. Pass task_id so bin mode doesn't loop.",[["port_id","1"],["bin_id",""],["task_id",""],["content",""],["taskcomplete","true"]]],
+   ["closeport","End the session. suspend_taskgroup=1 locks the group for later resume.",[["port_id","1"],["suspend_taskgroup",""]]],
+ ]],
+ ["Bin exchange",[
+   ["insertbin","Register a bin inserted at the port (bin_type required first time).",[["port_id","1"],["bin_id",""],["content",""],["bin_type",""]]],
+   ["removebin","Register the open bin removed from the port.",[["port_id","1"],["bin_id",""],["task_id",""],["taskcomplete","true"]]],
+ ]],
+ ["Task groups",[
+   ["create_taskgroup","Create a task group + its tasks. Bins = comma list → one task each. First task_id blank = taskgroup_id×10.",[["taskgroup_id",""],["shipment",""],["category","1"],["priority","1"],["suspended",""],["task_id",""],["estpicktime","20"],["bins","10002,10003"]]],
+   ["update_taskgroup","Update group-level properties only (not its tasks).",[["taskgroup_id",""],["category","1"],["priority","1"],["suspended",""]]],
+   ["add_task","Add one task to an existing group.",[["taskgroup_id",""],["task_id",""],["bin_id",""],["item",""],["estpicktime","20"]]],
+   ["cancel_task","Cancel a single task (not if it's selected).",[["task_id",""]]],
+   ["cancel_taskgroup","Cancel a whole task group.",[["taskgroup_id",""]]],
+ ]],
+ ["Port sequence (SEQUENCE mode)",[
+   ["setportsequence","Replace the port's task-group sequence. groups = comma list.",[["port_id","1"],["groups","1,4,2"]]],
+   ["appendportsequence","Append task groups to the port sequence.",[["port_id","1"],["groups","10,6"]]],
+   ["getportsequence","Read the port's current task-group sequence.",[["port_id","1"]]],
+ ]],
+ ["Pick-to-light (AS Router)",[
+   ["showpicktolight","Light a pick: source + optional target compartment.",[["source_port_id","1"],["source_bin_id",""],["source_compartment",""],["quantity","1"],["target_port_id",""],["target_bin_id",""],["target_compartment",""]]],
+   ["hidepicktolight","Cancel a PTL (by source + target port).",[["source_port_id","1"],["target_port_id",""]]],
+ ]],
+ ["MultiPort / flush (AS Router)",[
+   ["enablemultiport","Enable a MultiPort (ports must be empty first).",[["port_id",""]]],
+   ["disablemultiport","Disable a MultiPort back to physical ports.",[["port_id",""]]],
+   ["flushport","Send all bins at a port back to the grid.",[["port_id","1"]]],
+   ["flushportbin","Send one specific bin back to the grid.",[["port_id","1"],["bin_id",""]]],
+ ]],
+ ["Forecast / bin admin",[
+   ["forecastbin","Set bin(s) to FORECAST (pre-stage). Single or min/max range.",[["bin_id",""],["min_bin_id",""],["max_bin_id",""]]],
+   ["cancelforecastbin","Take bin(s) out of FORECAST.",[["bin_id",""],["min_bin_id",""],["max_bin_id",""]]],
+   ["updatebin","Update a bin's content only.",[["bin_id",""],["content",""]]],
+   ["createbin","Define a new bin (mode OUTSIDE).",[["bin_id",""],["bin_type",""]]],
+   ["deletebin","Delete a bin definition (must be OUTSIDE, no task group).",[["bin_id",""]]],
+ ]],
+ ["Config / system",[
+   ["configureport","Update a port setting (AS Router). e.g. robotqueue / weight_config / nexttaskgroupbinlookahead.",[["port_id","1"],["configname","robotqueue"],["configvalue","2"]]],
+   ["setconfiguration","Update AS Planner/Router config.",[["configname","preparationspan"],["configvalue","10"]]],
+   ["forcecharge","Force a % of R5 robots to charge (0/50/100).",[["charge_percent","50"]]],
+ ]],
+ ["Port Interface (custom ports)",[
+   ["portcellallocate","Announce a cell for delivery/fetch. getbin=true to fetch.",[["port_id","1"],["x",""],["y",""],["getbin","true"]]],
+   ["portlocationready","Permit a delivery to the cell.",[["port_id","1"],["x",""],["y",""],["getbin","false"]]],
+   ["portbinready","Confirm a bin is ready in the cell to be fetched.",[["port_id","1"],["x",""],["y",""],["bin_id",""],["content",""],["bin_type",""]]],
+   ["portbinmode","Set custom-port bin mode: OPEN / CLOSED / OUTSIDE.",[["port_id","1"],["bin_id",""],["bin_mode","OPEN"],["content",""]]],
+ ]],
+ ["AutoCase",[
+   ["case_insert","Next AutoCase op is an insert.",[["port_id","1"],["bin_id",""]]],
+   ["case_extract","Next AutoCase op is an extract.",[["port_id","1"],["bin_id",""]]],
+   ["case_cancel","Cancel the AutoCase insert/extract.",[["port_id","1"],["bin_id",""]]],
+   ["case_recvready","Next AutoCase op is ready.",[["port_id","1"],["bin_id",""]]],
+   ["case_getstate","Read AutoCase state for a port.",[["port_id","1"]]],
+ ]],
+ ["Queries (read-only)",[
+   ["getportstatus","Port mode, selected bin/task, ready, errors.",[["port_id","1"]]],
+   ["getbinstate","Bin mode, content, position, port.",[["bin_id","10002"]]],
+   ["getbininfo","Bin content + target grid.",[["bin_id","10002"]]],
+   ["getbinloc","Bin physical location + bins above.",[["bin_id","10002"]]],
+   ["getnexttaskgroups","Planned next task groups for a port.",[["port_id","1"]]],
+   ["getdrawerstate","Drawer position + snap lock (AS Router).",[["port_id","1"]]],
+   ["getportconfig","Port weight equipment + config.",[["port_id","1"]]],
+   ["getportweight","Port weight reading.",[["port_id","1"],["timeout_mode",""],["timeout_value",""]]],
+   ["gettaskinfo","Task group / task details.",[["taskgroup_id",""]]],
+   ["getcellcontent","Content code of a grid cell.",[["x",""],["y",""]]],
+   ["getsystemstate","System mode + forcecharge.",[]],
+   ["getsystemmode","System mode.",[]],
+   ["getversion","Interface version.",[]],
+   ["gettimefactor","Simulation time factor.",[]],
+ ]],
+ ["Simulation control",[
+   ["start_simulation","Start the simulation.",[]],
+   ["stop_simulation","Stop the simulation.",[]],
+   ["set_simulation_speed","Set sim speed (100 = normal).",[["speed","100"]]],
+   ["get_simulation_speed","Read sim speed.",[]],
+ ]],
+];
+function renderCatalog(){
+  $("#catalog").innerHTML=CATALOG.map((g,gi)=>`<div class="grp"><h3>${g[0]}</h3>${
+    g[1].map((m,mi)=>{const id=`m${gi}_${mi}`;
+      const inputs=m[2].map(([k,d])=>`<label>${k}</label><input id="${id}_${k}" value="${d}" data-k="${k}"/>`).join("");
+      return `<div class="mcard"><div class="mn">${m[0]}</div><div class="md">${m[1]}</div>
+        <div class="mp" id="${id}_p">${inputs||'<span class="muted">no parameters</span>'}</div>
+        <button class="small accent" onclick="sendMethod('${m[0]}','${id}')">Send ${m[0]}</button></div>`;
+    }).join("")}</div>`).join("");
+}
+function applyDefaults(){
+  document.querySelectorAll('#catalog input[data-k]').forEach(inp=>{
+    const k=inp.dataset.k;
+    if(k==='port_id'||k==='source_port_id') inp.value=v('dPort');
+    if(k==='bin_id'||k==='source_bin_id') inp.value=v('dBin');
+    if(k==='task_id') inp.value=v('dTask');
+    if(k==='category') inp.value=v('dCat');
+  });
+}
+function sendMethod(method,id){
+  const ps={};
+  document.querySelectorAll(`#${id}_p input[data-k]`).forEach(inp=>{if(inp.value.trim()!=="")ps[inp.dataset.k]=inp.value.trim();});
+  // special transforms
+  if(method==="setportsequence"||method==="appendportsequence"){
+    const g=(ps.groups||"").split(",").map(s=>+s.trim()).filter(Boolean);delete ps.groups;
+    post("/api/call",{method,params:{port_id:ps.port_id,taskgroup_ids:g}});return;}
+  if(method==="create_taskgroup"){
+    const bins=(ps.bins||"").split(",").map(s=>s.trim()).filter(Boolean);
+    const first=ps.task_id!==undefined?+ps.task_id:(+ps.taskgroup_id||0)*10;
+    const est=ps.estpicktime||20;
+    const tasks=bins.map((b,i)=>({task_id:first+i,bin_id:b,item:i+1,estpicktime:est}));
+    post("/api/call",{method,params:{taskgroup_id:ps.taskgroup_id,shipment:ps.shipment,category:ps.category,
+      priority:ps.priority,suspended:ps.suspended,req_time:isoNow(),tasks}});return;}
+  if(method==="update_taskgroup") ps.req_time=isoNow();
+  post("/api/call",{method,params:ps});
+}
+const isoNow=()=>new Date().toISOString().replace(/\.\d+Z$/,"Z");
+
+// ---------- batch task groups ----------
+// Build the create_taskgroup params for every group from the batch form.
+function batchGroups(){
+  const n=Math.max(1,+v('bt_count')||1), per=Math.max(1,+v('bt_tasks')||1);
+  const cats=v('bt_cats').split(",").map(s=>s.trim()).filter(Boolean);
+  const bins=v('bt_bins').split(",").map(s=>s.trim()).filter(Boolean);
+  if(!cats.length) throw "enter at least one category";
+  if(!bins.length) throw "enter at least one bin";
+  const tg0=+v('bt_tg'), task0=+v('bt_task'), ship=v('bt_ship'), req=isoNow();
+  const groups=[];
+  for(let g=0;g<n;g++){
+    const tasks=[];
+    for(let t=0;t<per;t++){const k=g*per+t;
+      tasks.push({task_id:task0+k,bin_id:bins[k%bins.length],item:t+1,estpicktime:v('bt_est')});}
+    groups.push({taskgroup_id:tg0+g,shipment:ship===""?"":+ship+g,category:cats[Math.min(g,cats.length-1)],
+      req_time:req,priority:v('bt_prio'),suspended:v('bt_susp'),tasks});
+  }
+  return groups;
+}
+// Same layout as autostore_client.create_taskgroup, for the preview only.
+function tgXml(p){
+  const el=(k,x,ind)=>x===""||x==null?"":`\n${ind}<${k}>${esc(String(x))}</${k}>`;
+  let s=`<?xml version="1.0" encoding="utf-8"?>\n<methodcall>\n  <name>create_taskgroup</name>\n  <params>`;
+  for(const k of ["taskgroup_id","shipment","category","req_time","priority","suspended"]) s+=el(k,p[k],"    ");
+  s+="\n    <tasks>";
+  for(const t of p.tasks){s+="\n      <task>";
+    for(const k of ["task_id","bin_id","item","estpicktime"]) s+=el(k,t[k],"        ");
+    s+="\n      </task>";}
+  return s+"\n    </tasks>\n  </params>\n</methodcall>";
+}
+function batchPreview(){
+  let gs;try{gs=batchGroups();}catch(e){$("#bt_status").textContent=e;return;}
+  const used=gs.length*gs[0].tasks.length, pool=new Set(v('bt_bins').split(",").map(s=>s.trim()).filter(Boolean)).size;
+  $("#bt_status").textContent=`${gs.length} groups, ${used} tasks`+(used>pool?` — only ${pool} bins, so bins repeat`:"");
+  $("#bt_xml").textContent=gs.map(tgXml).join("\n\n");
+  $("#bt_xml").classList.remove("hidden");
+}
+async function batchSend(){
+  let gs;try{gs=batchGroups();}catch(e){$("#bt_status").textContent=e;return;}
+  let ok=0;const bad=[];
+  for(const p of gs){
+    $("#bt_status").textContent=`sending ${p.taskgroup_id}…`;
+    const r=await post("/api/call",{method:"create_taskgroup",params:p}).catch(e=>({ok:false,error:String(e)}));
+    if(r.ok) ok++; else bad.push(`${p.taskgroup_id}: ${r.fault_text||r.error||"failed"}`);
+  }
+  $("#bt_status").textContent=`${ok}/${gs.length} created`+(bad.length?` — ${bad.join("; ")}`:"");
+}
+
+// init
+fillPresetMenu();
+// don't force a preset grid — the ports must match the grid loaded in the SDK.
+// Start with the real-grid loader front and centre; presets stay available.
+pickMode("drive");             // default to the run-it-yourself mode, cards in sync
+renderCatalog();
+poll();
+</script>
+</body>
+</html>

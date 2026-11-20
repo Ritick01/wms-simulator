@@ -1,0 +1,15 @@
+# virtual environments
+wms/
+venv/
+__pycache__/
+*.pyc
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
+
+# run logs, backups, reference documents — not in the repository
+logs/
+docs/
+*.zip

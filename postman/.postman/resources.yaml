@@ -1,0 +1,7 @@
+# Use this workspace to collaborate
+workspace:
+  id: c0758d55-8bca-4346-8ede-3fd4e03e328c
+
+localResources:
+  collections:
+    - ../AutoStore_Task_Interface.postman_collection.json

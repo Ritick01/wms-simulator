@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AutoStore Process Flows</title>
+<style>
+:root{
+  --bg:#f6f7f9; --card:#ffffff; --ink:#1b1f24; --muted:#5b6470; --line:#d7dce2;
+  --call:#e8f0fe; --call-b:#3b6fd8; --wait:#fff6e0; --wait-b:#c98a00;
+  --dec:#f3e8ff; --dec-b:#8a4fd1; --end:#e7f6ec; --end-b:#2f8f4e;
+  --bad:#fde8e8; --bad-b:#c43c3c; --lp:#eef1f4; --accent:#3b6fd8;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#121417; --card:#1b1e23; --ink:#e6e8eb; --muted:#9aa3ad; --line:#30353c;
+    --call:#1c2a44; --call-b:#6d98ef; --wait:#33290f; --wait-b:#e0a92a;
+    --dec:#2b1f3d; --dec-b:#b184ee; --end:#16301f; --end-b:#55c07a;
+    --bad:#3a1b1b; --bad-b:#ef7b7b; --lp:#262a30; --accent:#6d98ef;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#121417; --card:#1b1e23; --ink:#e6e8eb; --muted:#9aa3ad; --line:#30353c;
+  --call:#1c2a44; --call-b:#6d98ef; --wait:#33290f; --wait-b:#e0a92a;
+  --dec:#2b1f3d; --dec-b:#b184ee; --end:#16301f; --end-b:#55c07a;
+  --bad:#3a1b1b; --bad-b:#ef7b7b; --lp:#262a30; --accent:#6d98ef;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+header{padding:20px 16px 8px;max-width:1100px;margin:0 auto}
+h1{margin:0 0 4px;font-size:22px}
+.sub{color:var(--muted);margin:0}
+nav{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
+nav .in{max-width:1100px;margin:0 auto;padding:8px 16px;display:flex;gap:6px;flex-wrap:wrap}
+nav a{font-size:12px;text-decoration:none;color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:3px 10px;background:var(--card)}
+nav a:hover{border-color:var(--accent)}
+main{max-width:1100px;margin:0 auto;padding:16px}
+section{scroll-margin-top:90px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:18px}
+h2{margin:0 0 4px;font-size:17px}
+.when{color:var(--muted);margin:0 0 12px}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,340px);gap:18px}
+@media (max-width:760px){.grid{grid-template-columns:1fr}}
+.flow{display:flex;flex-direction:column;align-items:stretch}
+.node{border:1.5px solid;border-radius:8px;padding:8px 10px;position:relative}
+.node + .arrow{height:18px;display:flex;justify-content:center;color:var(--muted);font-size:12px;line-height:18px}
+.call{background:var(--call);border-color:var(--call-b)}
+.wait{background:var(--wait);border-color:var(--wait-b);border-style:dashed}
+.dec{background:var(--dec);border-color:var(--dec-b);border-radius:14px}
+.end{background:var(--end);border-color:var(--end-b);text-align:center;font-weight:600}
+.m{font-family:ui-monospace,Consolas,monospace;font-weight:700}
+.p{font-family:ui-monospace,Consolas,monospace;color:var(--muted);font-size:12px}
+.lp{display:inline-block;font-family:ui-monospace,Consolas,monospace;font-size:11px;background:var(--lp);border:1px solid var(--line);border-radius:4px;padding:0 5px;margin-left:4px}
+.note{font-size:12px;color:var(--muted);margin-top:2px}
+.br{display:grid;grid-template-columns:auto 1fr;gap:2px 8px;margin-top:6px;font-size:12.5px}
+.br b{font-size:11px;padding:0 6px;border-radius:4px;align-self:start}
+.y{background:var(--end);border:1px solid var(--end-b)}
+.n{background:var(--bad);border:1px solid var(--bad-b)}
+details{margin-top:6px}
+summary{cursor:pointer;font-size:12px;color:var(--accent)}
+pre{margin:6px 0 0;background:var(--lp);border:1px solid var(--line);border-radius:6px;padding:8px;overflow-x:auto;font-size:12px}
+.rules h3{margin:0 0 6px;font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+.rules ul{margin:0;padding-left:18px}
+.rules li{margin-bottom:6px}
+.src{font-size:10.5px;border-radius:4px;padding:0 5px;margin-left:4px;white-space:nowrap;border:1px solid var(--line)}
+.src.docs{background:var(--end)} .src.conf{background:var(--call)} .src.diag{background:var(--dec)}
+.src.email{background:var(--wait)} .src.sim{background:var(--lp)} .src.unv{background:var(--bad)}
+.legend{display:flex;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:10px}
+.legend span{display:inline-flex;align-items:center;gap:4px}
+.sw{width:14px;height:12px;border:1.5px solid;border-radius:3px;display:inline-block}
+.golden{columns:2;column-gap:28px;margin:0;padding-left:18px}
+@media (max-width:760px){.golden{columns:1}}
+.golden li{break-inside:avoid;margin-bottom:6px}
+a{color:var(--accent)}
+@media print{
+  nav{display:none}
+  body{background:#fff;font-size:12px}
+  section{break-inside:auto;border-color:#bbb}
+  .node,.rules li,pre{break-inside:avoid}
+  h2{break-after:avoid}
+  .grid{grid-template-columns:minmax(0,1fr) 240px}
+  details>summary{display:none}
+  section + section{break-before:page}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>AutoStore Process Flows</h1>
+  <p class="sub">Step-by-step call order for each process, with the Log Publisher (LP) line to wait for. Click a call to see its XML.</p>
+  <div class="legend">
+    <span><i class="sw" style="background:var(--call);border-color:var(--call-b)"></i>API call</span>
+    <span><i class="sw" style="background:var(--wait);border-color:var(--wait-b);border-style:dashed"></i>Wait / check LP</span>
+    <span><i class="sw" style="background:var(--dec);border-color:var(--dec-b)"></i>Decision</span>
+    <span><i class="sw" style="background:var(--end);border-color:var(--end-b)"></i>Done</span>
+    <span>Sources:
+      <i class="src docs">Docs</i><i class="src diag">Diagram</i><i class="src conf">Confluence</i><i class="src email">AutoStore email</i><i class="src sim">Sim note</i><i class="src unv">Unverified</i></span>
+  </div>
+</header>
+<nav><div class="in" id="nav"></div></nav>
+<main id="main"></main>
+
+<script>
+const CONF_FLUSH = "https://autostore.atlassian.net/wiki/spaces/LT/pages/6514147417/MultiPort+Mode+Transitions+and+Port+Flushing";
+const CONF_V27 = "https://autostore.atlassian.net/wiki/spaces/CT/pages/6622674969/Interface+V2.7.0+2025+Q4+green";
+
+const GOLDEN = [
+  ["Close the port before you flush it, and wait until its cells are empty before changing MultiPort mode.", "conf"],
+  ["Watch the Log Publisher, not only the API response. Every \"wait\" step is a wait for an LP line.", "diag"],
+  ["Interface V2.7.0: flushport / flushportbin / showpicktolight always return 9999 DRIVER_TIMEOUT, but the action still happens. Check LP before retrying.", "conf"],
+  ["openbin takes one selector only. Two selectors give fault 1023.", "sim"],
+  ["insertbin needs the port open and no bin selected (else 1030). Not supported on MultiPort (9999) or FusionPort.", "docs"],
+  ["removebin is not supported on MultiPort or FusionPort. Custom ports need the Port Interface handshake.", "docs"],
+  ["In JSON, getbin must be true/false. 1/0 gives fault 1071.", "sim"],
+  ["AS Router is needed for port sequence, MultiPort and configureport.", "docs"],
+  ["Bin stuck in TO_GRID after a failure: portbinmode → OUTSIDE, then re-insert. Use the API, not Service Console, for automated recovery.", "email"],
+  ["Port mode decides direction on a custom port: INSERT = inbound, OPEN = outbound.", "diag"],
+  ["A task group in a shipment or another sequence can't go into a port sequence (1091 / 1092).", "docs"],
+];
+
+// k: call | wait | dec | end ; p: [[param, example]] ; lp: LP line ; src: source tag for the step
+const FLOWS = [
+ {id:"pick", title:"Picking with task groups", when:"Normal order picking on a standard port (Carousel, Conveyor, PickUp...).",
+  steps:[
+   {k:"call", m:"create_taskgroup", p:[["taskgroup_id","123004"],["category","1"],["…tasks","3"]], note:"One task per bin. See the Batch task groups card in the Training tab."},
+   {k:"call", m:"openport", p:[["port_id","1"],["category","1"]], lp:"PM,1,O"},
+   {k:"call", m:"openbin", p:[["port_id","1"]], note:"Returns bin_id + task_id."},
+   {k:"wait", t:"Bin arrives at the port", lp:"BL,<bin>,…,P"},
+   {k:"call", m:"closebin", p:[["port_id","1"],["bin_id","10304"],["task_id","420192"],["taskcomplete","true"]], note:"Pass task_id so the bin doesn't loop back."},
+   {k:"dec", q:"More bins for this category?", y:"Back to openbin", n:"Go on"},
+   {k:"call", m:"closeport", p:[["port_id","1"],["suspend_taskgroup","0"]], lp:"PM,1,C", note:"suspend_taskgroup=1 locks the group for later resume."},
+   {k:"end", t:"Port closed"}],
+  rules:[["Port must be open with a category before openbin.","sim"],["Only one selector in openbin (1023).","sim"],["Close bins you opened before closing the port.","unv"]]},
+
+ {id:"adhoc", title:"Ad-hoc bin to a port", when:"Bring one specific bin to a port without a task group (inspection, counting).",
+  steps:[
+   {k:"call", m:"openport", p:[["port_id","1"]], lp:"PM,1,O"},
+   {k:"call", m:"openbin", p:[["port_id","1"],["bin_id","10304"]]},
+   {k:"wait", t:"Bin at port", lp:"BL,10304,…,P"},
+   {k:"call", m:"closebin", p:[["port_id","1"],["bin_id","10304"]]},
+   {k:"call", m:"closeport", p:[["port_id","1"]], lp:"PM,1,C"},
+   {k:"end", t:"Bin back to grid"}],
+  rules:[["bin_id is the only selector here; no category in openbin.","sim"]]},
+
+ {id:"remove", title:"Remove bin (standard port)", when:"Take a bin out of the system at a Carousel or other standard port.",
+  steps:[
+   {k:"call", m:"openport", p:[["port_id","1"]], lp:"PM,1,O"},
+   {k:"call", m:"openbin", p:[["port_id","1"],["bin_id","10304"]]},
+   {k:"wait", t:"Bin at port (mode PORT)", lp:"BL,10304,…,P"},
+   {k:"call", m:"removebin", p:[["port_id","1"],["bin_id","10304"]], lp:"BM,10304,X"},
+   {k:"dec", q:"Remove another bin?", y:"Back to openbin", n:"Go on"},
+   {k:"call", m:"closeport", p:[["port_id","1"]], lp:"PM,1,C"},
+   {k:"end", t:"Bin is OUTSIDE"}],
+  rules:[["Not supported on MultiPort or FusionPort.","docs"],["Custom ports (e.g. port 20, TC): use the custom outbound flow instead.","diag"]]},
+
+ {id:"insert", title:"Insert bin (standard port)", when:"Put a bin back into the grid at a standard port.",
+  steps:[
+   {k:"call", m:"openport", p:[["port_id","1"]], lp:"PM,1,O"},
+   {k:"wait", t:"No bin selected at the port", note:"getportstatus: selected_bin empty."},
+   {k:"call", m:"insertbin", p:[["port_id","1"],["bin_id","10304"],["content","0"],["bin_type","…only if new"]]},
+   {k:"wait", t:"Robot takes the bin into the grid", lp:"BL,10304,…", src:"unv"},
+   {k:"dec", q:"Insert another bin?", y:"Back to insertbin", n:"Go on"},
+   {k:"call", m:"closeport", p:[["port_id","1"]], lp:"PM,1,C"},
+   {k:"end", t:"Bin in grid"}],
+  rules:[["Port open and no selected bin, otherwise 1030.","docs"],["content is mandatory if bin_type is given; bin_type only for a brand-new bin.","docs"],["Not on MultiPort (9999) or FusionPort. Other faults: 1029, 1058, 1077, 1083.","docs"],["Exact LP line after insertbin not confirmed.","unv"]]},
+
+ {id:"cin", title:"Custom port: inbound", when:"Put bins into the grid through a custom port (Transfer Cell, conveyor).",
+  steps:[
+   {k:"call", m:"openport", p:[["port_id","4"],["port_mode","INSERT"]], lp:"PM,4,I", src:"unv"},
+   {k:"call", m:"portcellallocate", p:[["port_id","4"],["x","146"],["y","15"],["getbin","1"]], lp:"CI,146,15,0"},
+   {k:"wait", t:"Incoming bin is physically in the cell"},
+   {k:"call", m:"portbinready", p:[["port_id","4"],["x","146"],["y","15"],["bin_id","12345"]]},
+   {k:"wait", t:"Robot picks up the bin"},
+   {k:"dec", q:"LP shows BM,12345,R (TOGRID)?", y:"Pick-up failed → back to portbinready. Still stuck in TO_GRID → Recovery flow (portbinmode OUTSIDE)", n:"BL,12345,1 → bin on its way into grid"},
+   {k:"dec", q:"Insert another bin?", y:"Back to portcellallocate", n:"Go on"},
+   {k:"call", m:"closeport", p:[["port_id","4"]], lp:"PM,4,C"},
+   {k:"end", t:"Port closed"}],
+  rules:[["Flow from the custom-port inbound diagram.","diag"],["Use portbinready, not insertbin.","diag"],["openport mode parameter name (port_mode) not confirmed.","unv"]]},
+
+ {id:"cout", title:"Custom port: outbound", when:"Deliver bins out of the grid to a custom port.",
+  steps:[
+   {k:"call", m:"openport", p:[["port_id","4"],["port_mode","OPEN"]], lp:"PM,4,O", src:"unv"},
+   {k:"call", m:"portcellallocate", p:[["port_id","4"],["x","146"],["y","15"],["getbin","0"]], lp:"BL,12345,1"},
+   {k:"call", m:"openbin", p:[["port_id","4"],["bin_id","12345"]]},
+   {k:"wait", t:"Drop location is free"},
+   {k:"call", m:"portlocationready", p:[["port_id","4"],["x","146"],["y","15"],["getbin","0"]], lp:"CI,146,15,1"},
+   {k:"dec", q:"LP shows LF,1,146,15?", y:"Location failed → retry portlocationready", n:"Wait for BL,12345,1,146,15,1,P"},
+   {k:"call", m:"removebin", p:[["port_id","4"],["bin_id","12345"]], lp:"BM,12345,X"},
+   {k:"dec", q:"Remove another bin?", y:"Back to portcellallocate", n:"Go on"},
+   {k:"call", m:"closeport", p:[["port_id","4"]], lp:"PM,4,C"},
+   {k:"end", t:"Port closed"}],
+  rules:[["Flow from the custom-port outbound diagram.","diag"],["Don't send removebin before the bin is in mode PORT.","diag"]]},
+
+ {id:"cbi", title:"Custom port: bi-directional", when:"Deliver a bin and take an incoming bin in the same robot trip.",
+  steps:[
+   {k:"call", m:"openport", p:[["port_id","4"]]},
+   {k:"call", m:"portcellallocate", p:[["port_id","4"],["x","146"],["y","15"],["getbin","0"]]},
+   {k:"call", m:"openbin", p:[["port_id","4"]]},
+   {k:"wait", t:"Drop location is free"},
+   {k:"dec", q:"Should the robot wait for an incoming bin?", y:"portlocationready getbin=1", n:"portlocationready getbin=0"},
+   {k:"wait", t:"Delivered bin in mode PORT", lp:"BL,…,P"},
+   {k:"call", m:"removebin", p:[["port_id","4"],["bin_id","12345"]]},
+   {k:"dec", q:"Was getbin=1 (robot waiting)?", y:"Wait for incoming bin → portbinready → wait for pick-up", n:"Go on"},
+   {k:"dec", q:"Next bin?", y:"Outbound: portcellallocate getbin=0 · Inbound: getbin=1", n:"Go on"},
+   {k:"call", m:"closeport", p:[["port_id","4"]]},
+   {k:"end", t:"Port closed"}],
+  rules:[["Flow from the custom-port bi-directional diagram.","diag"]]},
+
+ {id:"recover", title:"Recovery: bin stuck in TO_GRID", when:"An inbound bin fails and stays in mode TO_GRID (BM,<bin>,R) instead of going into the grid.",
+  steps:[
+   {k:"wait", t:"Bin stays in TO_GRID after the failure", lp:"BM,12345,R"},
+   {k:"call", m:"portcellallocate", p:[["port_id","4"],["x","146"],["y","15"],["getbin","1"]], note:"Port open in INSERT and the cell allocated, as in the inbound flow.", src:"unv"},
+   {k:"call", m:"portbinmode", p:[["port_id","4"],["bin_id","12345"],["bin_mode","OUTSIDE"]], lp:"BM,12345,X", src:"email"},
+   {k:"wait", t:"Bin is back in OUTSIDE", note:"getbinstate: bin_mode X."},
+   {k:"dec", q:"Re-insert the bin?", y:"Custom inbound flow: portbinready → wait for pick-up", n:"Leave it OUTSIDE"},
+   {k:"end", t:"Bin recovered"}],
+  rules:[["AutoStore recommends portbinmode (TO_GRID → OUTSIDE) for automated recovery, not Service Console.","email"],["Manual fallback: Service Console → Bins view → set the bin's mode to Outside.","email"],["Once the bin is OUTSIDE, run the normal re-insertion flow.","email"],["Doing it after the cell is allocated is our working order; the email doesn't say whether allocation is required first.","unv"],["Parameter name bin_mode and LP line BM,…,X not confirmed against the Port Bin Mode page.","unv"]]},
+
+ {id:"seq", title:"Port sequence", when:"Make a port serve task groups in a fixed order.",
+  steps:[
+   {k:"call", m:"create_taskgroup", p:[["taskgroup_id","123004"],["category","1"]], note:"No shipment on these groups (1091)."},
+   {k:"call", m:"openport", p:[["port_id","1"],["port_mode","SEQUENCE"]], src:"unv"},
+   {k:"call", m:"setportsequence", p:[["port_id","1"],["taskgroup_id","123004"],["taskgroup_id","123005"]]},
+   {k:"call", m:"getportsequence", p:[["port_id","1"]], note:"Check the order."},
+   {k:"call", m:"openbin", p:[["port_id","1"]]},
+   {k:"call", m:"closebin", p:[["port_id","1"],["bin_id","…"],["task_id","…"]]},
+   {k:"dec", q:"More groups to add?", y:"appendportsequence, then openbin", n:"Go on"},
+   {k:"call", m:"closeport", p:[["port_id","1"]]},
+   {k:"end", t:"Sequence done"}],
+  rules:[["Needs AS Router and a port opened in SEQUENCE mode.","docs"],["Faults: 1018, 1044, 1090 category conflict, 1091 in a shipment, 1092 already in a sequence.","docs"],["Exact openport parameter for SEQUENCE mode not confirmed.","unv"]]},
+
+ {id:"flush", title:"Flush port / flush port bin", when:"Send bins at a port back to the grid (before maintenance or a MultiPort change).",
+  steps:[
+   {k:"call", m:"closeport", p:[["port_id","1"]], lp:"PM,1,C", src:"conf"},
+   {k:"call", m:"flushport", p:[["port_id","1"]], note:"Or flushportbin with port_id + bin_id for one bin."},
+   {k:"dec", q:"Response is 9999 DRIVER_TIMEOUT?", y:"Known V2.7.0 bug: flush still happened. Don't resend; check LP", n:"Go on"},
+   {k:"wait", t:"Each bin goes to TO_GRID", lp:"BM,<bin>,R", src:"conf"},
+   {k:"wait", t:"Port cells empty (can take 30 s or more)", note:"getportstatus / LP BL lines show bins back in the grid."},
+   {k:"end", t:"Port empty"}],
+  rules:[["Close the port, then flush. Wait for all bins to leave before changing MultiPort mode.","conf"],["Flush only sets the bins to mode TO_GRID; robots then fetch them.","conf"],["In Interface V2.7.0 flushport and flushportbin always return 9999 DRIVER_TIMEOUT even though the flush works.","conf"]]},
+
+ {id:"multi", title:"Enable / disable MultiPort", when:"Merge physical ports into one MultiPort, or split it back.",
+  steps:[
+   {k:"dec", q:"Enabling or disabling?", y:"Enable: close and flush the child ports", n:"Disable: close and flush the parent port"},
+   {k:"call", m:"closeport", p:[["port_id","…"]]},
+   {k:"call", m:"flushport", p:[["port_id","…"]]},
+   {k:"wait", t:"All bins gone from the port cells", note:"Follow the Flush flow."},
+   {k:"call", m:"enablemultiport", p:[["port_id","…"]], note:"or disablemultiport"},
+   {k:"dec", q:"Error (e.g. 9999 DRIVER_TIMEOUT)?", y:"Assume bins are still at the port → flush again, wait, retry", n:"Go on"},
+   {k:"end", t:"Mode changed"}],
+  rules:[["Changing MultiPort mode with bins still at the port causes errors. Close and flush first.","conf"],["Treat an error on the mode change as \"bins still at the port\".","conf"],["Needs AS Router.","sim"],["Which port_id to pass (parent vs child) not confirmed. Check the Enable MultiPort page.","unv"]]},
+
+ {id:"config", title:"Configure port", when:"Change robot queue, weight or lookahead settings on a port.",
+  steps:[
+   {k:"call", m:"configureport", p:[["port_id","3"],["configname","robotqueue"],["configvalue","2"]]},
+   {k:"dec", q:"Fault?", y:"1084 wrong name · 1085 bad value · 1000 port not available", n:"Go on"},
+   {k:"call", m:"getportconfig", p:[["port_id","3"]], note:"Check the new setting."},
+   {k:"end", t:"Setting applied"}],
+  rules:[["Needs AS Router.","docs"],["robotqueue 1–48 (−1 clears); weight_config 0–4; nextTaskGroupBinLookahead (−1 clears).","docs"],["configvalue is always a string.","docs"],["weight_config 3 only on Conveyor Ports without a weight sensor.","docs"]]},
+
+ {id:"bins", title:"Bin definitions", when:"Create a new bin in the system, or delete one.",
+  steps:[
+   {k:"call", m:"createbin", p:[["bin_id","10500"],["bin_type","…"]], note:"New bin starts in mode OUTSIDE."},
+   {k:"dec", q:"Put it into the grid now?", y:"Insert bin flow (standard) or custom inbound flow", n:"Go on"},
+   {k:"call", m:"deletebin", p:[["bin_id","10500"]], note:"Only when the bin is OUTSIDE and in no task group."},
+   {k:"end", t:"Done"}],
+  rules:[["deletebin needs mode OUTSIDE and no task group.","sim"]]},
+];
+
+const SRC = {docs:"Docs", diag:"Diagram", conf:"Confluence", email:"AutoStore email", sim:"Sim note", unv:"Unverified"};
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const tag = s => s ? `<i class="src ${s}">${SRC[s]}</i>` : "";
+
+function xml(m, p){
+  const lines = p.filter(([k]) => !k.startsWith("…")).map(([k,v]) => `        <${k}>${v}</${k}>`).join("\n");
+  return `<?xml version="1.0" encoding="utf-8"?>\n<methodcall>\n    <name>${m}</name>\n    <params>\n${lines}\n    </params>\n</methodcall>`;
+}
+
+function node(s){
+  const lp = s.lp ? `<span class="lp">LP ${esc(s.lp)}</span>` : "";
+  const note = s.note ? `<div class="note">${esc(s.note)}</div>` : "";
+  if (s.k === "call") return `<div class="node call"><span class="m">${s.m}</span>${lp}${tag(s.src)}
+      <div class="p">${s.p.map(([k,v]) => `${k}=${esc(v)}`).join("  ")}</div>${note}
+      <details><summary>XML</summary><pre>${esc(xml(s.m, s.p))}</pre></details></div>`;
+  if (s.k === "wait") return `<div class="node wait">⏳ ${esc(s.t)}${lp}${tag(s.src)}${note}</div>`;
+  if (s.k === "dec") return `<div class="node dec">◆ ${esc(s.q)}
+      <div class="br"><b class="y">Yes</b><span>${esc(s.y)}</span><b class="n">No</b><span>${esc(s.n)}</span></div></div>`;
+  return `<div class="node end">${esc(s.t)}</div>`;
+}
+
+const main = document.getElementById("main");
+main.innerHTML =
+  `<section id="golden"><h2>Golden rules</h2><p class="when">Read these first. Sources:
+     <a href="${CONF_FLUSH}" target="_blank">MultiPort &amp; flushing (Confluence)</a> ·
+     <a href="${CONF_V27}" target="_blank">Interface V2.7.0 issues (Confluence)</a></p>
+   <ul class="golden">${GOLDEN.map(([t,s]) => `<li>${esc(t)}${tag(s)}</li>`).join("")}</ul></section>` +
+  FLOWS.map(f => `<section id="${f.id}"><h2>${esc(f.title)}</h2><p class="when">${esc(f.when)}</p>
+    <div class="grid"><div class="flow">${f.steps.map(node).join('<div class="arrow">▼</div>')}</div>
+    <div class="rules"><h3>Rules</h3><ul>${f.rules.map(([t,s]) => `<li>${esc(t)}${tag(s)}</li>`).join("")}</ul></div></div></section>`).join("");
+
+document.getElementById("nav").innerHTML =
+  `<a href="#golden">Golden rules</a>` + FLOWS.map(f => `<a href="#${f.id}">${esc(f.title)}</a>`).join("");
+
+// Printing (or ?print) expands every XML block so it ends up on paper
+const openAll = () => document.querySelectorAll("details").forEach(d => d.open = true);
+if (location.search.includes("print")) { document.documentElement.dataset.theme = "light"; openAll(); }
+window.addEventListener("beforeprint", openAll);
+</script>
+</body>
+</html>
